@@ -52,11 +52,11 @@ type FullParams struct {
 
 var DefaultOptions = Options{
 	Threads:               -1, // auto
-	VaeDecodeOnly:         true,
-	FreeParamsImmediately: true,
+	VaeDecodeOnly:         false,
+	FreeParamsImmediately: false,
 	RngType:               CUDA_RNG,
 	Wtype:                 F32,
-	Schedule:              DEFAULT,
+	Schedule:              DISCRETE,
 }
 
 var DefaultFullParams = FullParams{
@@ -139,14 +139,17 @@ func (sd *Model) LoadFromFile(path string) error {
 	ctx := sd.csd.NewCtx(path,
 		sd.options.VaePath,
 		sd.options.TaesdPath,
+		"",
 		sd.options.LoraModelDir,
+		"",
 		sd.options.VaeDecodeOnly,
 		sd.options.VaeTiling,
 		sd.options.FreeParamsImmediately,
 		sd.options.Threads,
 		sd.options.Wtype,
 		sd.options.RngType,
-		sd.options.Schedule)
+		sd.options.Schedule,
+		false)
 	sd.ctx = ctx
 	return nil
 }
@@ -162,14 +165,17 @@ func (sd *Model) SetOptions(options Options) {
 		sd.diffusionModelPath,
 		sd.options.VaePath,
 		sd.options.TaesdPath,
+		"",
 		sd.options.LoraModelDir,
+		"",
 		sd.options.VaeDecodeOnly,
 		sd.options.VaeTiling,
 		sd.options.FreeParamsImmediately,
 		sd.options.Threads,
 		sd.options.Wtype,
 		sd.options.RngType,
-		sd.options.Schedule)
+		sd.options.Schedule,
+		false)
 	sd.ctx = ctx
 }
 
@@ -308,6 +314,10 @@ func (sd *Model) Close() error {
 		}
 	}
 	return nil
+}
+
+func (sd *Model) SystemInfo() string {
+	return sd.csd.GetSystemInfo()
 }
 
 func imageToBytes(decode image.Image) Image {

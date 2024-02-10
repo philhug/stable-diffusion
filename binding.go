@@ -4,9 +4,10 @@
 package sd
 
 import (
-	"github.com/ebitengine/purego"
 	"runtime"
 	"unsafe"
+
+	"github.com/ebitengine/purego"
 )
 
 type LogLevel int
@@ -82,7 +83,7 @@ type CUpScalerCtx struct {
 type CLogCallback func(level LogLevel, text string)
 
 type CStableDiffusion interface {
-	NewCtx(modelPath string, vaePath string, taesdPath string, loraModelDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wType WType, rngType RNGType, schedule Schedule) *CStableDiffusionCtx
+	NewCtx(modelPath string, vaePath string, taesdPath string, controlNetPath string, loraModelDir string, embedDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wType WType, rngType RNGType, schedule Schedule, keepControlNetCPU bool) *CStableDiffusionCtx
 	PredictImage(ctx *CStableDiffusionCtx, prompt string, negativePrompt string, clipSkip int, cfgScale float32, width int, height int, sampleMethod SampleMethod, sampleSteps int, seed int64, batchCount int) []Image
 	ImagePredictImage(ctx *CStableDiffusionCtx, img Image, prompt string, negativePrompt string, clipSkip int, cfgScale float32, width int, height int, sampleMethod SampleMethod, sampleSteps int, strength float32, seed int64, batchCount int) []Image
 	SetLogCallBack(cb CLogCallback)
@@ -122,7 +123,7 @@ type CStableDiffusionImpl struct {
 
 	sdGetSystemInfo func() string
 
-	newSdCtx func(modelPath string, vaePath string, taesdPath string, loraModelDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wtype int, rngType int, schedule int) uintptr
+	newSdCtx func(modelPath string, vaePath string, taesdPath string, controlNetPath string, loraModelDir string, embedDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wtype int, rngType int, schedule int, keepControlNetCPU bool) uintptr
 
 	sdSetLogCallback func(callback func(level int, text uintptr, data uintptr) uintptr, data uintptr)
 
@@ -147,7 +148,7 @@ func NewCStableDiffusion(libraryPath string) (*CStableDiffusionImpl, error) {
 
 	impl := CStableDiffusionImpl{}
 
-	purego.RegisterLibFunc(&impl.sdSetLogCallback, libSd, "sd_get_system_info")
+	purego.RegisterLibFunc(&impl.sdGetSystemInfo, libSd, "sd_get_system_info")
 	purego.RegisterLibFunc(&impl.newSdCtx, libSd, "new_sd_ctx")
 	purego.RegisterLibFunc(&impl.sdSetLogCallback, libSd, "sd_set_log_callback")
 	purego.RegisterLibFunc(&impl.txt2img, libSd, "txt2img")
@@ -160,8 +161,8 @@ func NewCStableDiffusion(libraryPath string) (*CStableDiffusionImpl, error) {
 	return &impl, nil
 }
 
-func (c *CStableDiffusionImpl) NewCtx(modelPath string, vaePath string, taesdPath string, loraModelDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wType WType, rngType RNGType, schedule Schedule) *CStableDiffusionCtx {
-	ctx := c.newSdCtx(modelPath, vaePath, taesdPath, loraModelDir, vaeDecodeOnly, vaeTiling, freeParamsImmediately, nThreads, int(wType), int(rngType), int(schedule))
+func (c *CStableDiffusionImpl) NewCtx(modelPath string, vaePath string, taesdPath string, controlNetPath string, loraModelDir string, embedDir string, vaeDecodeOnly bool, vaeTiling bool, freeParamsImmediately bool, nThreads int, wType WType, rngType RNGType, schedule Schedule, keepControlNetCPU bool) *CStableDiffusionCtx {
+	ctx := c.newSdCtx(modelPath, vaePath, taesdPath, controlNetPath, loraModelDir, embedDir, vaeDecodeOnly, vaeTiling, freeParamsImmediately, nThreads, int(wType), int(rngType), int(schedule), keepControlNetCPU)
 	return &CStableDiffusionCtx{
 		ctx: ctx,
 	}
